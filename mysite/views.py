@@ -11,11 +11,6 @@ def index(request):
     features = Feature.objects.all()
     return render(request, 'index.html', {'features': features})
 
-def counter(request):
-    text = request.POST['text']
-    word_count = len(text.split())
-    return render(request, 'counter.html', {'word_count': word_count})
-
 def register(request):
     #if the user is trying to create an account then follow this
     if request.method == 'POST':
@@ -67,3 +62,11 @@ def login(request):
 def logout(request):
     auth.logout(request)
     return redirect("/")
+
+def post(request,pk):
+    #will take a request and then the value pk
+    return render(request, 'post.html', {'pk':pk})
+
+def counter(request):
+    posts = [1, 2, 3, 4, 'rafi', 'robyn', 'daku']
+    return render(request, 'counter.html', {'posts': posts})
