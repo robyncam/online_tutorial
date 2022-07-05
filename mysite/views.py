@@ -1,31 +1,14 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib.auth.models import User, auth
+from django.contrib import messages
+from django.contrib.auth import authenticate
+
 from django.http import HttpResponse
 from .models import Feature
 
 
 def index(request):
-    feature1 = Feature()
-    feature1.id = 0
-    feature1.name = 'Fast'
-    feature1.details = 'Our service is very quick'
-
-    feature2 = Feature()
-    feature2.id = 1
-    feature2.name = 'Reliable'
-    feature2.details = 'Our service is very reliable'
-
-    feature3 = Feature()
-    feature3.id = 2
-    feature3.name = 'Easy to Use'
-    feature3.details = 'Our service is very easy to use'
-
-    feature4 = Feature()
-    feature4.id = 3
-    feature4.name = 'Affordable'
-    feature4.details = 'Our service is very affordable'
-
-    features = [feature1, feature2, feature3, feature4]
-
+    features = Feature.objects.all()
     return render(request, 'index.html', {'features': features})
 
 def counter(request):
@@ -33,3 +16,54 @@ def counter(request):
     word_count = len(text.split())
     return render(request, 'counter.html', {'word_count': word_count})
 
+def register(request):
+    #if the user is trying to create an account then follow this
+    if request.method == 'POST':
+        username = request.POST['username']
+        email = request.POST['email']
+        password = request.POST['password']
+        password2 = request.POST['password2']
+
+#check if the passwords matched if so then we want to check if the email or username is already in the database
+        if password == password2:
+            if User.objects.filter(email=email).exists():
+                messages.info(request, "Email already used")
+                return redirect('register')
+            elif User.objects.filter(username=username).exists():
+                messages.info(request, "Username already exists")
+                return redirect('register')
+            else:
+                # otherwise everything worked and we want to create the user
+                user = User.objects.create_user(username=username, email=email, password=password)
+                user.save();
+                return redirect('login')
+#if the passwords dont match then send an error
+        else:
+            messages.info(request, "Passwords did not match")
+            return redirect('register')
+
+    else:
+        return render(request, 'register.html')
+
+def login(request):
+    if request.method == "POST":
+        username = request.POST['username']
+        password = request.POST['password']
+
+        user = auth.authenticate(username=username, password=password)
+
+        #if the user exists, if the user is None then they are not on the platform...
+        if user is not None:
+            auth.login(request, user)
+            return redirect("/")
+        #redirect to the homepage
+        else:
+            messages.info(request, "Credentials do not match our system, try again")
+            return redirect('login')
+    else:
+        return render(request, 'login.html')
+    #otherwise just show the login.html as they are just looking at this page
+
+def logout(request):
+    auth.logout(request)
+    return redirect("/")
